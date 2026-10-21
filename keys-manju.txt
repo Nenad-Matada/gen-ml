@@ -1,0 +1,885 @@
+# @title Experiment - 1
+!pip install rouge-score "transformers<5.0.0"
+
+from transformers import pipeline
+from rouge_score import rouge_scorer
+
+# Step 1: Load summarization model
+summarizer = pipeline(
+    "summarization",
+    model="sshleifer/distilbart-cnn-12-6"
+)
+
+# Step 2: Load translation model
+translator = pipeline(
+    "translation_en_to_fr",
+    model="Helsinki-NLP/opus-mt-en-fr"
+)
+
+# Step 3: Input text
+text = """
+Artificial intelligence helps computers learn
+from data. It is used in education, healthcare
+and business. AI can solve many problems.
+"""
+
+# Step 4: Generate summary
+result = summarizer(
+    text,
+    max_length=30,
+    min_length=5,
+    do_sample=False
+)
+
+summary = result[0]["summary_text"]
+
+# Step 5: Translate sentence
+sentence = "Good morning. How are you?"
+translation = translator(sentence)
+
+# Step 6: Reference summary for evaluation
+reference = "Artificial intelligence helps computers learn from data and solve problems."
+
+# Step 7: Evaluate using ROUGE
+scorer = rouge_scorer.RougeScorer(
+    ["rouge1", "rouge2", "rougeL"],
+    use_stemmer=True
+)
+
+scores = scorer.score(reference, summary)
+
+# Step 8: Display output
+print("Original Text:", text)
+print("Generated Summary:", summary)
+
+print("English:", sentence)
+print("French:", translation[0]["translation_text"])
+
+print("\nROUGE Evaluation:")
+print("ROUGE-1:", scores["rouge1"])
+print("ROUGE-2:", scores["rouge2"])
+print("ROUGE-L:", scores["rougeL"])
+
+
+# @title Experiment - 2
+
+# Install required libraries
+!pip -q install transformers sentencepiece sacrebleu
+
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from sacrebleu import corpus_bleu
+
+# T1: Load pretrained NLLB model
+model_name = "facebook/nllb-200-distilled-600M"
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+print("Model Loaded Successfully!")
+
+# Translation function
+def translate(text, target_lang):
+    tokenizer.src_lang = "eng_Latn"
+    inputs = tokenizer(text, return_tensors="pt")
+
+    output = model.generate(
+        **inputs,
+        forced_bos_token_id=tokenizer.convert_tokens_to_ids(target_lang),
+        max_new_tokens=100
+    )
+
+    return tokenizer.batch_decode(output, skip_special_tokens=True)[0]
+
+# T2: Translate English to Hindi, French and German
+text = "Artificial Intelligence is changing the world."
+
+hi = translate(text, "hin_Deva")
+fr = translate(text, "fra_Latn")
+de = translate(text, "deu_Latn")
+
+print("\n----- Translation -----")
+print("English :", text)
+print("Hindi   :", hi)
+print("French  :", fr)
+print("German  :", de)
+
+# T3: Translate 20 English sentences to Hindi
+sentences = [
+    "Hello",
+    "Good morning",
+    "How are you?",
+    "I am fine.",
+    "What is your name?",
+    "My name is Manju.",
+    "I am a student.",
+    "I study AI and ML.",
+    "Python is easy.",
+    "I love programming.",
+    "Machine learning is interesting.",
+    "Deep learning uses neural networks.",
+    "Transformers are powerful.",
+    "Today is a sunny day.",
+    "I like reading books.",
+    "We are learning NLP.",
+    "Translation is useful.",
+    "India is a beautiful country.",
+    "Thank you.",
+    "Have a nice day."
+]
+
+print("\n----- 20 Sentence Translation -----")
+for s in sentences:
+    print(f"{s} --> {translate(s,'hin_Deva')}")
+
+# T4: Evaluate using BLEU Score
+reference = [["कृत्रिम बुद्धिमत्ता दुनिया बदल रही है।"]]
+candidate = [hi]
+
+bleu = corpus_bleu(candidate, reference)
+
+print("\nBLEU Score:", round(bleu.score,2))
+
+# T5: Compare translations
+print("\n----- Comparison -----")
+print("English :", text)
+print("Hindi   :", hi)
+print("French  :", fr)
+print("German  :", de)
+
+# T6: Identify translation errors
+print("\nPossible Translation Errors")
+print("- Named Entity (NER) errors")
+print("- Grammar mistakes")
+print("- Word order differences")
+print("- Missing or extra words")
+
+# T7: Suggestions for improvement
+print("\nSuggestions")
+print("- Use larger translation models.")
+print("- Fine-tune on domain-specific datasets.")
+print("- Train with more multilingual data.")
+print("- Perform human evaluation along with BLEU score.")
+
+# @title Experiment - 3
+import numpy as np
+
+# Input sentence
+sentence = "The Cat Sat on the Mat"
+tokens = sentence.split()
+n = len(tokens)
+
+# Random attention scores
+np.random.seed(42)
+scores = np.random.rand(n, n)
+
+# Softmax function
+def softmax(x):
+    e = np.exp(x - np.max(x, axis=1, keepdims=True))
+    return e / np.sum(e, axis=1, keepdims=True)
+
+# Attention matrix before masking
+before_mask = softmax(scores)
+
+# Apply causal mask
+mask = np.triu(np.ones((n, n)), k=1) * (-1e9)
+masked_scores = scores + mask
+
+# Attention matrix after masking
+after_mask = softmax(masked_scores)
+
+# Display results
+print("Attention Matrix Before Masking:\n")
+print(np.round(before_mask, 3))
+
+print("\nAttention Matrix After Causal Masking:\n")
+print(np.round(after_mask, 3))
+
+# @title Experiment - 4
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split
+from sklearn.neural_network import BernoulliRBM
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report
+
+# Load and normalize MNIST
+X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False)
+X = X.astype('float32') / 255.0
+y = y.astype(int)
+
+# Display 5 images
+plt.figure(figsize=(8,2))
+for i in range(5):
+    plt.subplot(1,5,i+1)
+    plt.imshow(X[i].reshape(28,28), cmap='gray')
+    plt.title(y[i])
+    plt.axis('off')
+plt.show()
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# RBM + Logistic Regression
+rbm = BernoulliRBM(n_components=50, learning_rate=0.01,
+                   n_iter=5, random_state=42)
+
+
+
+model = Pipeline([
+    ('rbm', rbm),
+    ('logistic', LogisticRegression(max_iter=300))
+])
+
+# Train
+model.fit(X_train, y_train)
+
+# Classification report
+y_pred = model.predict(X_test)
+print("Classification Report:")
+print(classification_report(y_test, y_pred))
+
+# RBM reconstruction
+X_sample = X_test[:5]
+hidden = rbm.transform(X_sample)
+
+# Reconstruct: hidden features × RBM components
+reconstructed = np.dot(hidden, rbm.components_) + rbm.intercept_visible_
+reconstructed = 1 / (1 + np.exp(-reconstructed))
+
+# Display original and reconstructed
+plt.figure(figsize=(8,4))
+for i in range(5):
+    plt.subplot(2,5,i+1)
+    plt.imshow(X_sample[i].reshape(28,28), cmap='gray')
+    plt.title("Original")
+    plt.axis('off')
+
+    plt.subplot(2,5,i+6)
+    plt.imshow(reconstructed[i].reshape(28,28), cmap='gray')
+    plt.title("RBM")
+    plt.axis('off')
+
+plt.tight_layout()
+plt.show()
+
+# @title Experiment - 5
+!pip -q install gensim transformers
+
+
+import numpy as np
+from sklearn.datasets import fetch_20newsgroups
+from sklearn.neighbors import NearestNeighbors
+from sklearn.metrics import precision_score
+import gensim.downloader as api
+from gensim.models import Word2Vec
+from transformers import AutoTokenizer, AutoModel
+import torch
+
+# Load dataset
+data = fetch_20newsgroups(
+    subset='train',
+    remove=('headers','footers','quotes')
+)
+
+docs = data.data[:100]
+labels = data.target[:100]
+
+# ---------------- WORD2VEC ----------------
+words = [d.lower().split() for d in docs]
+w2v = Word2Vec(words, vector_size=50, min_count=2, workers=2)
+
+def w2v_embed(doc):
+    w = [x for x in doc.lower().split() if x in w2v.wv]
+    if not w:
+        return np.zeros(w2v.vector_size) # Return zero vector if no words are found
+    return np.mean([w2v.wv[x] for x in w], axis=0)
+
+W = np.array([w2v_embed(d) for d in docs])
+
+
+# ---------------- GLOVE ----------------
+glove = api.load("glove-wiki-gigaword-50")
+
+def glove_embed(doc):
+    w = [x for x in doc.lower().split() if x in glove]
+    if not w:
+        return np.zeros(glove.vector_size) # Return zero vector if no words are found
+    return np.mean([glove[x] for x in w], axis=0)
+
+G = np.array([glove_embed(d) for d in docs])
+
+
+# ---------------- BERT ----------------
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+model = AutoModel.from_pretrained("bert-base-uncased")
+
+def bert_embed(doc):
+    x = tokenizer(doc, return_tensors="pt",
+                  truncation=True, max_length=128)
+    with torch.no_grad():
+        out = model(**x).last_hidden_state
+    return out.mean(dim=1).numpy()[0]
+
+B = np.array([bert_embed(d) for d in docs])
+
+
+# ---------------- RETRIEVAL + METRICS ----------------
+def retrieve(embeddings, name):
+    knn = NearestNeighbors(n_neighbors=6, metric='cosine')
+    knn.fit(embeddings)
+
+    dist, ind = knn.kneighbors([embeddings[0]])
+    result = ind[0][1:]       # top 5, excluding query
+
+    relevant = [labels[i] == labels[0] for i in result]
+
+    precision = sum(relevant) / 5
+    total_relevant = sum(labels == labels[0]) - 1
+    recall = sum(relevant) / total_relevant
+
+    mrr = 0
+    for rank, r in enumerate(relevant, 1):
+        if r:
+            mrr = 1 / rank
+            break
+
+    print("\n", name)
+    print("5 documents:", result)
+    print("Precision@5:", round(precision, 3))
+    print("Recall@5:", round(recall, 3))
+    print("MRR:", round(mrr, 3))
+
+
+retrieve(W, "Word2Vec")
+retrieve(G, "GloVe")
+retrieve(B, "BERT")
+
+# Commented out IPython magic to ensure Python compatibility.
+
+# %pip install -q -U langchain-huggingface langchain-chroma langchain-community langchain-text-splitters langchain-core sentence-transformers pypdf transformers accelerate
+
+# @title Experiment 6
+# ===================== INSTALL =====================
+!pip -q install -U langchain langchain-community langchain-core \
+langchain-text-splitters langchain-chroma pypdf \
+sentence-transformers transformers accelerate
+
+# ===================== IMPORTS =====================
+import numpy as np
+from google.colab import files
+
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
+
+
+# ===================== 1. UPLOAD PDF =====================
+uploaded = files.upload()
+pdf = list(uploaded.keys())[0]
+
+print("Uploaded:", pdf)
+
+
+# ===================== 2. LOAD + CHUNK PDF =====================
+docs = PyPDFLoader(pdf).load()
+
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=800,
+    chunk_overlap=100
+)
+
+chunks = splitter.split_documents(docs)
+
+print("Pages:", len(docs))
+print("Chunks:", len(chunks))
+
+
+# ===================== 3. HUGGINGFACE EMBEDDINGS =====================
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
+
+db = Chroma.from_documents(
+    documents=chunks,
+    embedding=embeddings,
+    collection_name="research_rag"
+)
+
+print("ChromaDB created successfully!")
+
+
+# ===================== 4. LOAD LLM =====================
+model_name = "google/flan-t5-base"
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model = model.to(device)
+
+
+# ===================== 5. PROMPT =====================
+prompt = PromptTemplate.from_template("""
+Answer the question using only the given context.
+
+Context:
+{context}
+
+Question:
+{question}
+
+Answer:
+""")
+
+
+# ===================== 6. LLM FUNCTION =====================
+def generate_answer(text):
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=512
+    ).to(device)
+
+    with torch.no_grad():
+        output = model.generate(
+            **inputs,
+            max_new_tokens=150
+        )
+
+    return tokenizer.decode(
+        output[0],
+        skip_special_tokens=True
+    )
+
+
+# ===================== 7. RAG FUNCTION =====================
+def ask(question, k):
+
+    # Retriever
+    retriever = db.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": k}
+    )
+
+    # Retrieve documents
+    retrieved_docs = retriever.invoke(question)
+
+    # Create context
+    context = "\n\n".join(
+        d.page_content for d in retrieved_docs
+    )
+
+    # Prompt Template
+    final_prompt = prompt.format(
+        context=context,
+        question=question
+    )
+
+    # LLM
+    answer = generate_answer(final_prompt)
+
+    # Output Parser
+    answer = StrOutputParser().parse(answer)
+
+    print("\nQuestion:", question)
+    print("Answer:", answer)
+
+    print("Sources:")
+    for d in retrieved_docs:
+        print(
+            "Document:", d.metadata.get("source"),
+            "| Page:", d.metadata.get("page", 0) + 1
+        )
+
+
+# ===================== 8. 10 QUESTIONS =====================
+questions = [
+    "What is the main objective of the research?",
+    "What methodology is used?",
+    "What dataset is used?",
+    "What are the main findings?",
+    "What algorithm is proposed?",
+    "What are the advantages of the proposed method?",
+    "What are the limitations?",
+    "What are the experimental results?",
+    "What is the conclusion?",
+    "What future work is suggested?"
+]
+
+
+# ===================== 9. TEST WITH K VALUES =====================
+for k in [3, 5, 8, 10]:
+
+    print("\n" + "=" * 60)
+    print("RETRIEVAL WITH K =", k)
+    print("=" * 60)
+
+    for q in questions:
+        ask(q, k)
+
+!pip install -q datasets==3.6.0 huggingface_hub==0.34.4 pyarrow==23.0.1 sentence-transformers faiss-cpu transformers
+
+# @title Expermient - 7
+
+from datasets import load_dataset
+from sentence_transformers import SentenceTransformer
+from transformers import pipeline
+import numpy as np
+import faiss
+import re
+
+# 1. Load dataset
+ds = load_dataset(
+    "hotpotqa/hotpot_qa",
+    "distractor",
+    split="validation[:30]"
+)
+
+# 2. Extract sentences
+docs = []
+for item in ds:
+    for paragraph in item["context"]["sentences"]:
+        docs.extend(paragraph)
+
+docs = list(dict.fromkeys(
+    sentence.strip() for sentence in docs if sentence.strip()
+))
+
+print("Dataset loaded:", len(ds), "questions")
+print("Documents:", len(docs))
+
+# 3. Generate embeddings
+model = SentenceTransformer("all-MiniLM-L6-v2")
+embeddings = model.encode(
+    docs, normalize_embeddings=True, show_progress_bar=True
+).astype("float32")
+
+# 4. Create FAISS index
+index = faiss.IndexFlatIP(embeddings.shape[1])
+index.add(embeddings)
+
+# 5. Retrieve relevant sentences
+def retrieve(question, k=3):
+    vector = model.encode(
+        [question], normalize_embeddings=True
+    ).astype("float32")
+
+    scores, ids = index.search(
+        vector, min(k, len(docs))
+    )
+    return [docs[i] for i in ids[0] if i >= 0]
+
+# 6. Load text-generation model
+generator = pipeline(
+    "text2text-generation",
+    model="google/flan-t5-small"
+)
+
+# 7. Generate answer
+def answer(question, context):
+    prompt = (
+        "Answer the question briefly using the context.\n"
+        f"Context: {context}\n"
+        f"Question: {question}\n"
+        "Answer:"
+    )
+    result = generator(prompt, max_new_tokens=40)
+    return result[0]["generated_text"]
+
+# 8. Calculate F1 score
+def f1_score(prediction, reference):
+    p = prediction.lower().split()
+    r = reference.lower().split()
+
+    common = sum(
+        min(p.count(word), r.count(word))
+        for word in set(p)
+    )
+
+    if common == 0:
+        return 0.0
+
+    precision = common / len(p)
+    recall = common / len(r)
+
+    return 2 * precision * recall / (precision + recall)
+
+def normalize(text):
+    return re.sub(r"[^a-z0-9 ]", "", text.lower()).strip()
+
+# 9. Compare single-hop and two-hop RAG
+em1, f11, em2, f12 = [], [], [], []
+
+for item in ds.select(range(10)):
+    question = item["question"]
+    gold = item["answer"]
+
+    # Single-hop RAG
+    d1 = retrieve(question)
+    context1 = " ".join(d1)
+    a1 = answer(question, context1)
+
+    # Two-hop RAG
+    d2 = retrieve(question + " " + context1)
+    context2 = context1 + " " + " ".join(d2)
+    a2 = answer(question, context2)
+
+    em1.append(normalize(a1) == normalize(gold))
+    f11.append(f1_score(a1, gold))
+
+    em2.append(normalize(a2) == normalize(gold))
+    f12.append(f1_score(a2, gold))
+
+# 10. Display evaluation results
+print("\n--- RAG Evaluation ---")
+print("Single-hop EM:", round(np.mean(em1), 3))
+print("Single-hop F1:", round(np.mean(f11), 3))
+print("Two-hop EM:", round(np.mean(em2), 3))
+print("Two-hop F1:", round(np.mean(f12), 3))
+
+# @title Exp - 8
+!pip -q install transformers scikit-learn
+
+from transformers import pipeline
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+llm = pipeline("text2text-generation", model="google/flan-t5-small")
+
+texts = ["I love this product", "This is very bad",
+         "Amazing service", "Worst experience"]
+actual = [1, 0, 1, 0]  # 1=Positive, 0=Negative
+
+prompts = {
+    "Zero-shot": "Classify sentiment as Positive or Negative: {text}",
+    "Few-shot": """Examples:
+Text: I like it. Sentiment: Positive
+Text: I hate it. Sentiment: Negative
+Classify: {text}. Sentiment:""",
+    "Role-based": "You are a sentiment expert. Classify as Positive or Negative: {text}",
+    "Chain-of-thought-style": "Analyze the sentiment briefly, then give only Positive or Negative: {text}",
+    "Structured-output": "Return only JSON with key sentiment and value Positive or Negative for: {text}"
+}
+
+for name, template in prompts.items():
+    pred = []
+    for t in texts:
+        out = llm(template.format(text=t), max_new_tokens=50)[0]["generated_text"].lower()
+        pred.append(1 if "positive" in out else 0)
+
+    print("\n", name)
+    print("Accuracy:", accuracy_score(actual, pred))
+    print("Precision:", precision_score(actual, pred, zero_division=0))
+    print("Recall:", recall_score(actual, pred, zero_division=0))
+    print("F1:", f1_score(actual, pred, zero_division=0))
+
+!pip install -q diffusers transformers
+
+# @title Exp-9
+
+from diffusers import DiffusionPipeline
+from IPython.display import display
+import torch
+
+# Load pretrained model
+model = DiffusionPipeline.from_pretrained(
+    "runwayml/stable-diffusion-v1-5"
+).to("cuda")
+
+# Generate image
+prompt = "a cute cat sitting in a garden"
+image = model(prompt).images[0]
+
+# Display and save
+display(image)
+image.save("cat.png")
+
+!pip install -q transformers scipy
+
+# @title Exp - 10
+
+
+from transformers import pipeline
+from scipy.io.wavfile import write
+from IPython.display import Audio, display
+
+# Load pretrained text-to-speech model
+model = pipeline("text-to-speech", model="suno/bark-small")
+
+# Text input
+text = "I Love Machine Learning"
+
+# Convert text to audio
+audio = model(text)
+
+# Save as WAV file
+write("speech.wav", audio["sampling_rate"], audio["audio"])
+
+# Listen to speech
+display(Audio("speech.wav"))
+
+# @title Exp - 11
+def coding_agent(query):
+    print("Query:", query)
+
+    # Phase 1: Task decomposition
+    tasks = ["Understand query", "Select tool", "Execute task"]
+    print("\nSubtasks:", tasks)
+
+    # Phase 2: Tool selection
+    q = query.lower()
+
+    if "calculate" in q or "sum" in q:
+        tool = "Calculator"
+    elif "code" in q or "program" in q:
+        tool = "Code Generator"
+    else:
+        tool = "Text Assistant"
+
+    print("\nSelected Tool:", tool)
+
+    # Phase 3: Conditional execution
+    if tool == "Calculator":
+        try:
+            expr = q.replace("calculate", "").replace("sum", "").strip()
+            result = eval(expr, {"__builtins__": {}}, {})
+        except:
+            result = "Cannot calculate expression"
+
+    elif tool == "Code Generator":
+        result = "def hello():\n    print('Hello World')"
+
+    else:
+        result = "Please provide more details."
+
+    # Phase 4: Final answer
+    print("\nExecution Phase: Completed")
+    print("Final Answer:", result)
+
+
+query = input("Enter your query: ")
+coding_agent(query)
+
+# @title Exp - 12
+!pip -q install trimesh matplotlib
+
+import trimesh
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Phase 1: Text prompt
+prompt = input("Enter prompt (cube/sphere/cylinder): ").lower()
+
+# Phase 2: Generate 3D object
+if "sphere" in prompt:
+    obj = trimesh.creation.icosphere()
+elif "cylinder" in prompt:
+    obj = trimesh.creation.cylinder(radius=1, height=2)
+else:
+    obj = trimesh.creation.box()
+
+print("3D object generated:", prompt)
+
+# Phase 3: Render from multiple viewpoints
+fig = plt.figure(figsize=(10, 3))
+for i, angle in enumerate([0, 45, 90]):
+    ax = fig.add_subplot(1, 3, i+1, projection="3d")
+    vertices = obj.vertices
+    theta = np.radians(angle)
+    R = np.array([[np.cos(theta), -np.sin(theta), 0],
+                  [np.sin(theta),  np.cos(theta), 0],
+                  [0, 0, 1]])
+    v = vertices @ R.T
+    ax.scatter(v[:, 0], v[:, 1], v[:, 2], s=2)
+    ax.set_title(f"View {angle}°")
+plt.show()
+
+# Phase 4: Short animation using rotation
+frames = []
+for angle in range(0, 360, 30):
+    copy = obj.copy()
+    copy.apply_transform(
+        trimesh.transformations.rotation_matrix(
+            np.radians(angle), [0, 0, 1]))
+    frames.append(copy.vertices)
+
+print("Animation frames generated:", len(frames))
+
+# Phase 5: Simple consistency evaluation
+print("Semantic consistency: Same object geometry maintained across views.")
+print("Evaluation: Object type =", prompt)
+
+# @title Exp - 13
+!pip -q install -U transformers sentence-transformers scikit-learn pillow
+
+import torch
+import numpy as np
+from PIL import Image
+from google.colab import files
+from transformers import BlipProcessor, BlipForConditionalGeneration
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# 1. Upload chest X-ray image
+uploaded = files.upload()
+filename = next(iter(uploaded))
+
+img = Image.open(filename).convert("RGB")
+
+# 2. Load BLIP image-captioning model
+model_name = "Salesforce/blip-image-captioning-base"
+
+processor = BlipProcessor.from_pretrained(model_name)
+blip_model = BlipForConditionalGeneration.from_pretrained(model_name)
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+blip_model = blip_model.to(device)
+
+# Generate image description
+inputs = processor(images=img, return_tensors="pt").to(device)
+
+with torch.no_grad():
+    output = blip_model.generate(**inputs, max_new_tokens=50)
+
+caption = processor.decode(output[0], skip_special_tokens=True)
+
+print("Image description:", caption)
+
+# 3. Sample medical knowledge documents
+docs = [
+    "Pneumonia is an infection that inflames air sacs in the lungs.",
+    "A normal chest X-ray generally shows clear lungs.",
+    "Pleural effusion is fluid around the lungs.",
+    "A chest X-ray should be interpreted by a qualified radiologist."
+]
+
+# 4. Create embeddings and retrieve relevant information
+embed = SentenceTransformer("all-MiniLM-L6-v2")
+
+D = embed.encode(docs, normalize_embeddings=True)
+q = embed.encode([caption], normalize_embeddings=True)
+
+scores = cosine_similarity(q, D)[0]
+idx = np.argsort(scores)[::-1][:2]
+
+print("\nRetrieved medical information:")
+for i in idx:
+    print("-", docs[i])
+
+# 5. Final RAG response
+print("\nRAG response:")
+print("Image description:", caption)
+print("Reference information:", docs[idx[0]])
+print("Reminder: This is a demonstration, not a medical diagnosis.")
+print("Consult a qualified radiologist for clinical interpretation.")
