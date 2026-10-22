@@ -1,0 +1,379 @@
+
+!pip install cryptography
+
+# @title Exp -1
+import socket
+
+# 1. Password Strength Checker
+print("1. PASSWORD CHECKER")
+password = input("Enter password: ")
+
+if len(password) >= 8:
+    print("Password is strong")
+else:
+    print("Weak password")
+
+# 2. User Authentication
+print("\n2. USER AUTHENTICATION")
+username = input("Enter username: ")
+pwd = input("Enter login password: ")
+
+if username == "student" and pwd == "1234":
+    print("Login Successful")
+else:
+    print("Invalid Username or Password")
+
+# 3. Find Local IP Address
+print("\n3. IP ADDRESS")
+hostname = socket.gethostname()
+ip = socket.gethostbyname(hostname)
+
+print("Hostname:", hostname)
+print("Local IP Address:", ip)
+
+# 4. Caesar Cipher
+print("\n4. CAESAR CIPHER")
+text = input("Enter message: ")
+shift = 3
+encrypted = ""
+
+for char in text:
+    encrypted += chr(ord(char) + shift)
+
+print("Encrypted Message:", encrypted)
+
+# 5. Hex Encoding and Decoding
+print("\n5. HEX ENCODING AND DECODING")
+text = input("Enter text: ")
+
+encoded = text.encode().hex()
+print("Encoded:", encoded)
+
+decoded = bytes.fromhex(encoded).decode()
+print("Decoded:", decoded)
+
+print("\nAll 5 experiments completed!")
+
+# @title Exp - 2
+import platform
+import requests
+
+# 1. Check System Information
+print("1. SYSTEM INFORMATION")
+print("Operating System:", platform.system())
+print("Version:", platform.version())
+print("Machine:", platform.machine())
+
+# 2. Generate Network Traffic
+print("\n2. NETWORK TRAFFIC")
+try:
+    response = requests.get("https://example.com", timeout=10)
+    print("Status Code:", response.status_code)
+except Exception:
+    print("Network request failed")
+
+# 3. Simple Input Validation
+print("\n3. INPUT VALIDATION")
+username = input("Enter username: ")
+
+if username.isalnum():
+    print("Valid Input")
+else:
+    print("Invalid Input: Special characters detected")
+
+# 4. SQL Injection Keyword Detection
+print("\n4. SQL INJECTION DETECTION")
+user_input = input("Enter username: ")
+keywords = ["SELECT", "DROP", "DELETE", "--"]
+
+for word in keywords:
+    if word.lower() in user_input.lower():
+        print("Possible malicious input detected")
+        break
+else:
+    print("Input appears normal")
+
+print("\nAll 4 experiments completed!")
+
+# @title Exp - 3
+from cryptography.fernet import Fernet
+import hashlib
+
+data = b"Hello World"
+
+# 1. Confidentiality
+key = Fernet.generate_key()
+f = Fernet(key)
+encrypted = f.encrypt(data)
+print("Encrypted:", encrypted)
+print("Decrypted:", f.decrypt(encrypted).decode())
+
+# 2. Integrity
+h1 = hashlib.sha256(data).hexdigest()
+h2 = hashlib.sha256(data).hexdigest()
+
+print("Integrity:", "Verified" if h1 == h2 else "Failed")
+
+# 3. Availability
+print("Availability: System is running")
+print("Data is accessible")
+
+# @title Exp - 4
+!pip install tqdm
+
+import hashlib
+import csv
+from tqdm import tqdm
+
+# Sample dictionary
+words = ["hello", "admin", "test123", "password123", "student"]
+
+# Input password
+password = input("Enter password: ")
+hash_value = hashlib.sha256(password.encode()).hexdigest()
+
+# Password strength
+if len(password) < 6:
+    strength = "Weak"
+elif len(password) < 10:
+    strength = "Medium"
+else:
+    strength = "Strong"
+
+print("SHA256 Hash:", hash_value)
+print("Password Strength:", strength)
+
+# Dictionary attack simulation on your own input
+found = False
+for word in tqdm(words, desc="Testing words"):
+    if word == password or hashlib.sha256(word.encode()).hexdigest() == hash_value:
+        print("Password found:", word)
+        found = True
+        break
+
+if not found:
+    print("Password not found in dictionary")
+
+# Export report
+with open("report.csv", "w", newline="") as file:
+    writer = csv.writer(file)
+    writer.writerow(["Password", "SHA256 Hash", "Strength"])
+    writer.writerow([password, hash_value, strength])
+
+print("Report saved as report.csv")
+
+# @title Exp - 5
+# Safe Virus Simulation
+
+# Simulated system files
+files = ["document.txt", "photo.jpg",
+         "suspicious.exe", "report.pdf"]
+
+print("Starting Virus Simulation...\n")
+
+# Simulate suspicious activity
+for file in files:
+    print("Scanning:", file)
+
+    if file.endswith(".exe"):
+        print("Warning: Suspicious file detected!")
+    else:
+        print("File is safe")
+
+print("\nSimulation completed.")
+print("Defender: Suspicious activity detected.")
+
+# @title Exp - 6
+# Simple Vulnerability Analyzer
+
+code = """
+password = "admin123"
+query = "SELECT * FROM users WHERE id=" + user_id
+eval(user_input)
+"""
+
+patterns = {
+    "Hardcoded password": "password =",
+    "SQL Injection risk": "SELECT",
+    "Unsafe eval()": "eval("
+}
+
+print("Scanning Source Code...\n")
+
+for name, pattern in patterns.items():
+    if pattern.lower() in code.lower():
+        print("Warning:", name, "detected")
+    else:
+        print("Safe:", name)
+
+print("\nScan Completed!")
+
+# @title Exp - 7
+
+from sklearn.tree import DecisionTreeClassifier
+
+# Features: [URL length, has @, uses HTTPS]
+X = [
+    [20, 0, 1],
+    [25, 0, 1],
+    [70, 1, 0],
+    [85, 1, 0],
+    [30, 0, 0],
+    [90, 0, 0],
+    [75, 0, 0],
+    [100, 1, 1],
+    [40, 0, 1],
+    [95, 0, 0]
+]
+
+# 0 = Legitimate, 1 = Phishing
+y = [0, 0, 1, 1, 0, 1, 1, 1, 0, 1]
+
+model = DecisionTreeClassifier(
+    max_depth=3,
+    random_state=0
+)
+model.fit(X, y)
+
+url = input("Enter URL: ").strip()
+
+features = [
+    len(url),
+    int("@" in url),
+    int(url.lower().startswith("https://"))
+]
+
+result = model.predict([features])[0]
+
+if result == 1:
+    print("Potential Phishing Website")
+else:
+    print("Potential Legitimate Website")
+
+# @title Exp - 8
+from cryptography.fernet import Fernet
+
+# Shared key for sender and receiver
+key = Fernet.generate_key()
+sender = Fernet(key)
+receiver = Fernet(key)
+
+# Sender writes a message
+message = input("Sender: Enter message: ")
+
+# Encrypt message
+encrypted = sender.encrypt(message.encode())
+print("Encrypted message sent to server:", encrypted)
+
+# Server relays ciphertext only
+print("Server: Forwarding encrypted message...")
+
+# Receiver decrypts message
+decrypted = receiver.decrypt(encrypted).decode()
+print("Receiver received:", decrypted)
+
+# @title Exp 9
+import hashlib
+import base64
+
+# Take input from user
+text = input("Enter text: ")
+
+# Hashing
+print("\n--- Hashing ---")
+print("MD5:", hashlib.md5(text.encode()).hexdigest())
+print("SHA-256:", hashlib.sha256(text.encode()).hexdigest())
+
+# Obfuscation using Base64
+print("\n--- Obfuscation ---")
+encoded = base64.b64encode(text.encode()).decode()
+print("Obfuscated:", encoded)
+
+# Restore original text
+decoded = base64.b64decode(encoded).decode()
+print("Original text:", decoded)
+
+# @title Exp - 10
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import hashes
+
+# Generate keys
+private_key = rsa.generate_private_key(
+    public_exponent=65537, key_size=2048)
+public_key = private_key.public_key()
+
+# Digital Signature
+message = b"Hello World"
+signature = private_key.sign(
+    message, padding.PKCS1v15(), hashes.SHA256())
+print("Digital Signature Generated")
+
+# Verify Signature
+try:
+    public_key.verify(
+        signature, message, padding.PKCS1v15(), hashes.SHA256())
+    print("Signature Verified")
+except:
+    print("Invalid Signature")
+
+# Authentication
+username = input("Enter username: ")
+password = input("Enter password: ")
+
+if username == "admin" and password == "1234":
+    print("Authentication Successful")
+
+    # Authorization
+    print("Authorization Successful: Access Granted")
+else:
+    print("Login Failed: Access Denied")
+
+# @title Exp - 11
+data = {
+    "Name": "Ravi",
+    "Age": 22,
+    "Email": "ravi@example.com",
+    "Health": "Flu"
+}
+
+pii = ["Name", "Email", "Phone", "Aadhaar"]
+
+for key, value in data.items():
+    dtype = "Structured" if isinstance(value, (int, float)) else "Unstructured"
+
+    if key in pii:
+        print(key, ":", value, "| PII |", dtype, "| At-rest")
+    else:
+        print(key, ":", value, "| Non-PII |", dtype, "| At-rest")
+
+import pandas as pd
+
+data = {
+    "Age": [21, 22, 21, 22, 35, 36],
+    "City": ["Mysore", "Mysore", "Delhi",
+             "Delhi", "Mumbai", "Mumbai"],
+    "Disease": ["Flu", "Cold", "Flu",
+                "Cold", "Cancer", "Flu"]
+}
+
+df = pd.DataFrame(data)
+
+print("Before Anonymization:")
+print(df)
+
+# Generalize age
+df["Age"] = (df["Age"] // 10) * 10
+df["Age"] = df["Age"].astype(str) + "s"
+
+# Hide city
+df["City"] = "*"
+
+print("\nAfter Anonymization:")
+print(df)
+
+# Check 2-anonymity
+groups = df.groupby(["Age", "City"]).size()
+print("\nGroup Sizes:")
+print(groups)
+
+print("2-anonymous:", all(groups >= 2))
